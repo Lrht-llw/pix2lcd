@@ -30,7 +30,6 @@ artifacts/
 
 # ===== 发布/部署产物 =====
 *.publishsettings
-*.pubxml
 *.pubxml.user
 *.appx
 *.appxbundle
