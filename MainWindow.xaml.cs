@@ -19,6 +19,7 @@ namespace pix2lcd
         public MainWindow()
         {
             InitializeComponent();
+            SourceInitialized += (_, _) => App.ApplyDarkTitleBar(this, AppTheme.IsDark);
         }
     }
 }

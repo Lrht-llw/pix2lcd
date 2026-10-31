@@ -64,7 +64,7 @@ public static class FontLibrary
         OutputFormat format)
     {
         var sb = new StringBuilder();
-        sb.Append("/*\r\n * 由 pix2lcd 生成的字模库\r\n");
+        sb.Append("/*\r\n * 由 Pix2LCD 生成的字模库\r\n");
         sb.Append($" * 字体: {font.Family}  {cellWidth}x{cellHeight}  ");
         sb.Append($"取模: {PatternName(pattern)}  {(msbFirst ? "顺向" : "逆向")}  {(yang ? "阳码" : "阴码")}\r\n");
         sb.Append($" * 字符数: {entries.Count}\r\n */\r\n\r\n");

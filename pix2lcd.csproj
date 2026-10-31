@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyTitle>pix2lcd 点阵取模工具</AssemblyTitle>
-    <Product>pix2lcd</Product>
+    <AssemblyTitle>Pix2LCD 点阵取模工具</AssemblyTitle>
+    <Product>Pix2LCD</Product>
     <Description>点阵字模生成工具：文字取模与图片取模，支持批量字库。</Description>
     <Company>Lrht-llw</Company>
     <Copyright>Copyright © 2026</Copyright>

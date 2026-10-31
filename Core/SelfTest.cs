@@ -54,7 +54,7 @@ public static class SelfTest
 
     public static string Run()
     {
-        Log.Append("pix2lcd 自检\r\n============\r\n");
+        Log.Append("Pix2LCD 自检\r\n============\r\n");
 
         // ---------------------------------------------------------- 1. 逐列式
         Log.Append("\r\n1. 取模方式字节顺序（手工验算样例）\r\n");

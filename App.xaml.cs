@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
@@ -16,6 +17,7 @@ namespace pix2lcd
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            AppTheme.Initialize();
             OutputEncoding.TryRegisterCodePages();
 
             if (e.Args.Length > 0 && e.Args[0].Equals("--selftest", StringComparison.OrdinalIgnoreCase))
@@ -135,9 +137,29 @@ namespace pix2lcd
 
         private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show(e.Exception.ToString(), "pix2lcd — 未处理的异常",
+            MessageBox.Show(e.Exception.ToString(), "Pix2LCD — 未处理的异常",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }
+
+        /// <summary>让系统标题栏跟随当前界面主题（Windows 10 1809+）。</summary>
+        internal static void ApplyDarkTitleBar(Window window, bool dark)
+        {
+            try
+            {
+                IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+                if (hwnd == IntPtr.Zero) return;
+                int enabled = dark ? 1 : 0;
+                if (DwmSetWindowAttribute(hwnd, 20, ref enabled, sizeof(int)) != 0)
+                    DwmSetWindowAttribute(hwnd, 19, ref enabled, sizeof(int));
+            }
+            catch
+            {
+                // 旧版系统不支持时保持系统默认标题栏。
+            }
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
     }
 }

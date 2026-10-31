@@ -26,24 +26,59 @@ public sealed class LibraryDialog : Window
     {
         _options = options;
         Title = "生成字库";
-        Width = 720;
-        Height = 620;
+        Width = 760;
+        Height = 660;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF6, 0xF8));
+        Background = ThemeBrush("AppBackgroundBrush");
+        SourceInitialized += (_, _) => App.ApplyDarkTitleBar(this, AppTheme.IsDark);
 
-        var root = new Grid { Margin = new Thickness(10) };
-        for (int i = 0; i < 4; i++) root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var root = new Grid { Margin = new Thickness(16) };
+        for (int i = 0; i < 5; i++) root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         Content = root;
 
-        _info = new TextBlock { Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)), Margin = new Thickness(0, 0, 0, 8) };
-        Grid.SetRow(_info, 0);
-        root.Children.Add(_info);
+        var title = new TextBlock { Text = "批量生成字库", FontSize = 17, FontWeight = FontWeights.SemiBold };
+        var subtitle = new TextBlock
+        {
+            Text = "按当前取模设置把字符集生成为 C 数组或二进制字库，并附索引文件。",
+            FontSize = 11.5,
+            Foreground = ThemeBrush("TextMutedBrush"),
+            Margin = new Thickness(0, 3, 0, 0),
+        };
+        var head = new StackPanel();
+        head.Children.Add(title);
+        head.Children.Add(subtitle);
+        Grid.SetRow(head, 0);
+        root.Children.Add(head);
 
-        var charLabel = new TextBlock { Text = "字符集（每行一个或直接连写，可粘贴）:", Margin = new Thickness(0, 0, 0, 4) };
-        Grid.SetRow(charLabel, 1);
+        _info = new TextBlock
+        {
+            Foreground = ThemeBrush("AccentBrush"),
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var infoBorder = new Border
+        {
+            Background = ThemeBrush("AccentTintBrush"),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10, 6, 10, 6),
+            Margin = new Thickness(0, 12, 0, 12),
+            Child = _info,
+        };
+        Grid.SetRow(infoBorder, 1);
+        root.Children.Add(infoBorder);
+
+        var charLabel = new TextBlock
+        {
+            Text = "字符集（每行一个或直接连写，可粘贴）",
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = ThemeBrush("TextSecondaryBrush"),
+            Margin = new Thickness(0, 0, 0, 6),
+        };
+        Grid.SetRow(charLabel, 2);
         root.Children.Add(charLabel);
 
         _chars = new TextBox
@@ -52,9 +87,11 @@ public sealed class LibraryDialog : Window
             AcceptsReturn = true,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             FontFamily = new FontFamily("Consolas, 宋体"),
-            Height = 220,
+            FontSize = 12.5,
+            Padding = new Thickness(8, 6, 8, 6),
+            MinHeight = 200,
         };
-        Grid.SetRow(_chars, 2);
+        Grid.SetRow(_chars, 3);
         root.Children.Add(_chars);
 
         var opts = new WrapPanel { Margin = new Thickness(0, 8, 0, 8) };
@@ -66,42 +103,58 @@ public sealed class LibraryDialog : Window
         opts.Children.Add(_filterSpace);
         opts.Children.Add(_textMode);
         opts.Children.Add(_binMode);
-        Grid.SetRow(opts, 3);
+        Grid.SetRow(opts, 4);
         root.Children.Add(opts);
 
         var mid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
         mid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var pathLabel = new TextBlock { Text = "输出文件:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
+        var pathLabel = new TextBlock
+        {
+            Text = "输出文件", VerticalAlignment = VerticalAlignment.Center,
+            Foreground = ThemeBrush("TextSecondaryBrush"), FontSize = 12,
+            Margin = new Thickness(0, 0, 8, 0),
+        };
         Grid.SetColumn(pathLabel, 0);
         mid.Children.Add(pathLabel);
-        _pathBox = new TextBox { Height = 26, VerticalContentAlignment = VerticalAlignment.Center };
+        _pathBox = new TextBox { Height = 30, VerticalContentAlignment = VerticalAlignment.Center };
         Grid.SetColumn(_pathBox, 1);
         mid.Children.Add(_pathBox);
-        var browse = new Button { Content = "浏览…", Width = 70, Height = 26, Margin = new Thickness(6, 0, 0, 0) };
+        var browse = new Button { Content = "浏览…", Width = 74, Height = 30, Margin = new Thickness(8, 0, 0, 0) };
         browse.Click += (_, _) => Browse();
         Grid.SetColumn(browse, 2);
         mid.Children.Add(browse);
-        Grid.SetRow(mid, 4);
+        Grid.SetRow(mid, 5);
         root.Children.Add(mid);
 
-        _status = new TextBlock { Text = "就绪", Margin = new Thickness(0, 4, 0, 4), Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x66, 0x33)) };
-        Grid.SetRow(_status, 5);
+        _status = new TextBlock
+        {
+            Text = "就绪", Margin = new Thickness(0, 6, 0, 6), FontSize = 12,
+            Foreground = ThemeBrush("SuccessBrush"),
+        };
+        Grid.SetRow(_status, 6);
         root.Children.Add(_status);
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var ok = new Button { Content = "开始生成", Width = 110, Height = 30, Margin = new Thickness(0, 0, 8, 0) };
+        var ok = new Button
+        {
+            Content = "开始生成", Width = 112, Height = 32, Margin = new Thickness(0, 0, 8, 0),
+            Style = (Style)Application.Current.FindResource("PrimaryButtonStyle"),
+        };
         ok.Click += (_, _) => DoGenerate();
-        var cancel = new Button { Content = "取消", Width = 80, Height = 30 };
+        var cancel = new Button { Content = "取消", Width = 84, Height = 32 };
         cancel.Click += (_, _) => Close();
         buttons.Children.Add(ok);
         buttons.Children.Add(cancel);
-        Grid.SetRow(buttons, 6);
+        Grid.SetRow(buttons, 7);
         root.Children.Add(buttons);
 
         UpdateInfo();
     }
+
+    private static Brush ThemeBrush(string key)
+        => Application.Current?.TryFindResource(key) as Brush ?? Brushes.Transparent;
 
     private void UpdateInfo()
     {

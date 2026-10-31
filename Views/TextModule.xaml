@@ -1,4 +1,4 @@
-<UserControl x:Class="pix2lcd.Views.TextModule"
+﻿<UserControl x:Class="pix2lcd.Views.TextModule"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
@@ -6,197 +6,289 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="240"/>
+            <RowDefinition Height="212"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ================= 工具栏 ================= -->
-        <Border Grid.Row="0" Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,6">
-            <WrapPanel Orientation="Horizontal">
-                <TextBlock Text="字体:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="fontBox" Width="170" Height="26" Margin="0,0,10,0"
-                          SelectionChanged="OnSelectionChanged"/>
+        <Border Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,0,0,10">
+            <StackPanel>
+                <WrapPanel Orientation="Horizontal">
+                    <TextBlock Text="字体" Style="{StaticResource FieldLabelStyle}" Margin="2,0,6,0"/>
+                    <ComboBox x:Name="fontBox" Width="180" Height="30" Margin="0,0,12,0"
+                              SelectionChanged="OnSelectionChanged"/>
 
-                <TextBlock Text="字宽:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="widthBox" Width="62" Height="26" IsEditable="True" Margin="0,0,6,0"
-                          SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
+                    <TextBlock Text="字宽" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="widthBox" Width="66" Height="30" IsEditable="True" Margin="0,0,6,0"
+                              SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
 
-                <TextBlock Text="字高:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="heightBox" Width="62" Height="26" IsEditable="True" Margin="0,0,6,0"
-                          SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
+                    <TextBlock Text="字高" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="heightBox" Width="66" Height="30" IsEditable="True" Margin="0,0,8,0"
+                              SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
 
-                <CheckBox x:Name="scaleBox" Content="等比" IsChecked="True" VerticalAlignment="Center"
-                          Margin="0,0,10,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    <CheckBox x:Name="scaleBox" Content="等比" IsChecked="True" VerticalAlignment="Center"
+                              Margin="0,0,4,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
 
-                <ToggleButton x:Name="boldBtn" Content="B" Width="28" Height="26" FontWeight="Bold" Margin="0,0,2,0"
-                              Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
-                <ToggleButton x:Name="italicBtn" Content="I" Width="28" Height="26" FontStyle="Italic" Margin="0,0,2,0"
-                              Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
-                <ToggleButton x:Name="underlineBtn" Content="U" Width="28" Height="26"
-                              Margin="0,0,10,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    <Rectangle Style="{StaticResource ToolbarDividerStyle}"/>
 
-                <Button Content="⟲" ToolTip="左旋 90°" Width="32" Height="26" Margin="0,0,2,0" Click="OnRotateLeft"/>
-                <Button Content="⟳" ToolTip="右旋 90°" Width="32" Height="26" Margin="0,0,2,0" Click="OnRotateRight"/>
-                <Button Content="⇋" ToolTip="水平翻转" Width="32" Height="26" Margin="0,0,2,0" Click="OnFlipH"/>
-                <Button Content="⇅" ToolTip="垂直翻转" Width="32" Height="26" Margin="0,0,8,0" Click="OnFlipV"/>
-                <Button Content="去空白" ToolTip="裁掉四周空白" Width="60" Height="26" Margin="0,0,8,0" Click="OnTrim"/>
-                <Button Content="复位" ToolTip="重新按字体渲染" Width="50" Height="26" Margin="0,0,10,0" Click="OnReset"/>
+                    <ToggleButton x:Name="boldBtn" Content="B" Width="30" Height="30" FontWeight="Bold"
+                                  ToolTip="加粗" Margin="0,0,4,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    <ToggleButton x:Name="italicBtn" Content="I" Width="30" Height="30" FontStyle="Italic"
+                                  ToolTip="倾斜" Margin="0,0,4,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    <ToggleButton x:Name="underlineBtn" Content="U" Width="30" Height="30"
+                                  ToolTip="下划线" Margin="0,0,4,0" Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
 
-                <TextBlock Text="点阵:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="dotWidthBox" Width="58" Height="26" IsEditable="True" Margin="0,0,2,0"
-                          SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
-                <TextBlock Text="×" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                <ComboBox x:Name="dotHeightBox" Width="58" Height="26" IsEditable="True" Margin="0,0,6,0"
-                          SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
-                <CheckBox x:Name="lockSizeBox" Content="锁定" VerticalAlignment="Center" Margin="0,0,10,0"
-                          Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    <Rectangle Style="{StaticResource ToolbarDividerStyle}"/>
 
-                <TextBlock Text="文字:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox x:Name="textBox" Width="220" Height="26" VerticalContentAlignment="Center"
-                         Text="字模ABC" TextChanged="OnTextChanged"/>
-            </WrapPanel>
+                    <Button Content="左旋" ToolTip="左旋 90°" Width="56" Height="30" Margin="0,0,4,0" Click="OnRotateLeft"/>
+                    <Button Content="右旋" ToolTip="右旋 90°" Width="56" Height="30" Margin="0,0,4,0" Click="OnRotateRight"/>
+                    <Button Content="水平翻转" ToolTip="左右镜像" Width="84" Height="30" Margin="0,0,4,0" Click="OnFlipH"/>
+                    <Button Content="垂直翻转" ToolTip="上下镜像" Width="84" Height="30" Margin="0,0,4,0" Click="OnFlipV"/>
+                    <Button Content="去空白" ToolTip="裁掉四周空白" Width="66" Height="30" Margin="0,0,4,0" Click="OnTrim"/>
+                    <Button Content="复位" ToolTip="重新按字体渲染" Width="54" Height="30" Margin="0,0,4,0" Click="OnReset"/>
+                </WrapPanel>
+
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="文字" Style="{StaticResource FieldLabelStyle}" Margin="2,0,8,0"/>
+                    <TextBox x:Name="textBox" Grid.Column="1" Height="32" FontSize="13"
+                             VerticalContentAlignment="Center"
+                             Text="字模ABC" TextChanged="OnTextChanged"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0,0,0">
+                        <Rectangle Style="{StaticResource ToolbarDividerStyle}"/>
+                        <TextBlock Text="点阵" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="dotWidthBox" Width="64" Height="30" IsEditable="True" Margin="0,0,4,0"
+                                  SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
+                        <TextBlock Text="×" Style="{StaticResource FieldLabelStyle}" Margin="0,0,4,0"/>
+                        <ComboBox x:Name="dotHeightBox" Width="64" Height="30" IsEditable="True" Margin="0,0,8,0"
+                                  SelectionChanged="OnSelectionChanged" LostFocus="OnLostFocus"/>
+                        <CheckBox x:Name="lockSizeBox" Content="锁定" VerticalAlignment="Center" Margin="0,0,0,0"
+                                  Checked="OnCheckedChanged" Unchecked="OnCheckedChanged"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- ================= 预览 + 选项 ================= -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="332"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="White" CornerRadius="4" Margin="0,0,6,6">
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,10,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,6">
-                        <TextBlock x:Name="sizeLabel" Text="16 × 16" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        <TextBlock Text="   放大:" VerticalAlignment="Center" Margin="12,0,4,0"/>
-                        <Slider x:Name="zoomSlider" Width="140" Minimum="1" Maximum="16" Value="8"
-                                VerticalAlignment="Center" ValueChanged="OnZoomChanged"/>
-                        <TextBlock Text="    左: 点阵预览    右: 取模走线" VerticalAlignment="Center"
-                                   Foreground="#888" Margin="12,0,0,0"/>
-                    </StackPanel>
-                    <Grid Grid.Row="1">
+
+                    <Grid Grid.Row="0" Margin="14,11,14,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="点阵预览" Style="{StaticResource SectionTitleStyle}"/>
+                        <Border Grid.Column="1" Style="{StaticResource ChipStyle}" Margin="10,0,0,0">
+                            <TextBlock x:Name="sizeLabel" Style="{StaticResource PillTextStyle}" Text="16 × 16"/>
+                        </Border>
+                        <TextBlock Grid.Column="2" Style="{StaticResource HintStyle}" HorizontalAlignment="Center"
+                                   Text="左：点阵像素      右：取模走线"/>
+                        <TextBlock Grid.Column="3" Text="缩放" Style="{StaticResource HintStyle}" Margin="0,0,8,0"/>
+                        <Slider Grid.Column="4" x:Name="zoomSlider" Width="120" Minimum="1" Maximum="16" Value="8"
+                                ValueChanged="OnZoomChanged"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="14,0,14,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Auto" Margin="6">
-                            <Image x:Name="previewImage" Stretch="None"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                        </ScrollViewer>
-                        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Auto" Margin="6">
-                            <Image x:Name="orderImage" Stretch="None"
-                                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                        </ScrollViewer>
+                        <Border Grid.Column="0" Style="{StaticResource InsetStyle}" Margin="0,0,5,0">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                          Padding="10">
+                                <Image x:Name="previewImage" Stretch="None"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            </ScrollViewer>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource InsetStyle}" Margin="5,0,0,0">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                          Padding="10">
+                                <Image x:Name="orderImage" Stretch="None"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            </ScrollViewer>
+                        </Border>
                     </Grid>
                 </Grid>
             </Border>
 
-            <Border Grid.Column="1" Background="White" CornerRadius="4" Margin="0,0,0,6">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="10">
-                        <GroupBox Header="点阵格式" Padding="6">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="yinCode" Content="阴码 (亮点=1)" IsChecked="True"
-                                             Margin="0,0,14,0" Checked="OnCheckedChanged"/>
-                                <RadioButton x:Name="yangCode" Content="阳码 (亮点=0)"
-                                             Checked="OnCheckedChanged"/>
-                            </StackPanel>
-                        </GroupBox>
-
-                        <GroupBox Header="取模方式" Padding="6" Margin="0,8,0,0">
-                            <StackPanel>
-                                <RadioButton x:Name="modeVertical" Content="逐列式" IsChecked="True"
-                                             Checked="OnCheckedChanged"/>
-                                <RadioButton x:Name="modeHorizontal" Content="逐行式" Margin="0,4,0,0"
-                                             Checked="OnCheckedChanged"/>
-                                <RadioButton x:Name="modeColumnRow" Content="列行式" Margin="0,4,0,0"
-                                             Checked="OnCheckedChanged"/>
-                                <RadioButton x:Name="modeRowColumn" Content="行列式" Margin="0,4,0,0"
-                                             Checked="OnCheckedChanged"/>
-                            </StackPanel>
-                        </GroupBox>
-
-                        <GroupBox Header="取模走向" Padding="6" Margin="0,8,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="lsbFirst" Content="逆向 (低位在前)" Margin="0,0,14,0"
-                                             Checked="OnCheckedChanged"/>
-                                <RadioButton x:Name="msbFirst" Content="顺向 (高位在前)" IsChecked="True"
-                                             Checked="OnCheckedChanged"/>
-                            </StackPanel>
-                        </GroupBox>
-
-                        <GroupBox Header="输出数制与格式" Padding="6" Margin="0,8,0,0">
-                            <StackPanel>
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="14,12,14,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="取模设置" Style="{StaticResource SectionTitleStyle}"/>
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Style="{StaticResource HintStyle}"
+                                   Text="阴码 / 走向 / 格式"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,0,4,10">
+                        <StackPanel Margin="4,4,8,4">
+                            <GroupBox Header="点阵格式" Padding="8">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="hexMode" Content="十六进制" IsChecked="True"
+                                    <RadioButton x:Name="yinCode" Content="阴码 (亮点=1)" IsChecked="True"
                                                  Margin="0,0,14,0" Checked="OnCheckedChanged"/>
-                                    <RadioButton x:Name="decMode" Content="十进制" Checked="OnCheckedChanged"/>
+                                    <RadioButton x:Name="yangCode" Content="阳码 (亮点=0)"
+                                                 Checked="OnCheckedChanged"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                    <TextBlock Text="格式:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <ComboBox x:Name="styleBox" Width="110" Height="24"
-                                              SelectionChanged="OnSelectionChanged"/>
-                                    <TextBlock Text="每行:" VerticalAlignment="Center" Margin="10,0,4,0"/>
-                                    <TextBox x:Name="perLineBox" Width="46" Height="24" Text="16"
-                                             VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                    <TextBlock Text="个" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                    <TextBlock Text="数据前缀:" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="dataPrefixBox" Width="60" Height="24" Text="0x"
-                                             VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                    <TextBlock Text="后缀:" VerticalAlignment="Center" Margin="8,0,4,0"/>
-                                    <TextBox x:Name="dataSuffixBox" Width="60" Height="24" Text=","
-                                             VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                    <CheckBox x:Name="commentBox" Content="输出注释" IsChecked="True"
-                                              VerticalAlignment="Center" Checked="OnCheckedChanged"
-                                              Unchecked="OnCheckedChanged"/>
-                                    <CheckBox x:Name="indexBox" Content="输出索引" Margin="14,0,0,0"
-                                              VerticalAlignment="Center" Checked="OnCheckedChanged"
-                                              Unchecked="OnCheckedChanged"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </GroupBox>
+                            </GroupBox>
 
-                        <GroupBox Header="取模说明" Padding="6" Margin="0,8,0,0">
-                            <TextBlock x:Name="helpText" TextWrapping="Wrap" FontSize="11" Foreground="#555"/>
-                        </GroupBox>
-                    </StackPanel>
-                </ScrollViewer>
+                            <GroupBox Header="取模方式" Padding="8" Margin="0,8,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <RadioButton x:Name="modeVertical" Grid.Row="0" Grid.Column="0"
+                                                 Content="逐列式" IsChecked="True" Checked="OnCheckedChanged"/>
+                                    <RadioButton x:Name="modeHorizontal" Grid.Row="0" Grid.Column="1"
+                                                 Content="逐行式" Checked="OnCheckedChanged"/>
+                                    <RadioButton x:Name="modeColumnRow" Grid.Row="1" Grid.Column="0"
+                                                 Content="列行式" Margin="0,6,0,0" Checked="OnCheckedChanged"/>
+                                    <RadioButton x:Name="modeRowColumn" Grid.Row="1" Grid.Column="1"
+                                                 Content="行列式" Margin="0,6,0,0" Checked="OnCheckedChanged"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Header="取模走向" Padding="8" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="lsbFirst" Content="逆向 (低位在前)" Margin="0,0,14,0"
+                                                 Checked="OnCheckedChanged"/>
+                                    <RadioButton x:Name="msbFirst" Content="顺向 (高位在前)" IsChecked="True"
+                                                 Checked="OnCheckedChanged"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="输出数制与格式" Padding="8" Margin="0,8,0,0">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="hexMode" Content="十六进制" IsChecked="True"
+                                                     Margin="0,0,14,0" Checked="OnCheckedChanged"/>
+                                        <RadioButton x:Name="decMode" Content="十进制" Checked="OnCheckedChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                        <TextBlock Text="格式" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                                        <ComboBox x:Name="styleBox" Width="104" Height="28"
+                                                  SelectionChanged="OnSelectionChanged"/>
+                                        <TextBlock Text="每行" Style="{StaticResource FieldLabelStyle}" Margin="10,0,4,0"/>
+                                        <TextBox x:Name="perLineBox" Width="46" Height="28" Text="16"
+                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                        <TextBlock Text="个" Style="{StaticResource FieldLabelStyle}" Margin="4,0,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                        <TextBlock Text="数据前缀" Style="{StaticResource FieldLabelStyle}"/>
+                                        <TextBox x:Name="dataPrefixBox" Width="62" Height="28" Text="0x"
+                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                        <TextBlock Text="后缀" Style="{StaticResource FieldLabelStyle}" Margin="8,0,4,0"/>
+                                        <TextBox x:Name="dataSuffixBox" Width="62" Height="28" Text=","
+                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <CheckBox x:Name="commentBox" Content="输出注释" IsChecked="True"
+                                                  VerticalAlignment="Center" Checked="OnCheckedChanged"
+                                                  Unchecked="OnCheckedChanged"/>
+                                        <CheckBox x:Name="indexBox" Content="输出索引" Margin="14,0,0,0"
+                                                  VerticalAlignment="Center" Checked="OnCheckedChanged"
+                                                  Unchecked="OnCheckedChanged"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="取模说明" Padding="8" Margin="0,8,0,0">
+                                <TextBlock x:Name="helpText" TextWrapping="Wrap" FontSize="11.5"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" LineHeight="18"/>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
 
         <!-- ================= 输出 ================= -->
-        <Border Grid.Row="2" Background="White" CornerRadius="4" Margin="0,0,0,6">
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0" Margin="0,0,0,10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="点阵数据输出区" Margin="8,6,0,2" FontWeight="SemiBold"/>
+                <Grid Grid.Row="0" Margin="14,10,14,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="点阵数据输出区" Style="{StaticResource SectionTitleStyle}"/>
+                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" Style="{StaticResource HintStyle}"
+                               Text="可直接复制到工程中使用"/>
+                </Grid>
                 <TextBox Grid.Row="1" x:Name="outputBox" IsReadOnly="True" AcceptsReturn="True"
-                         FontFamily="Consolas, 宋体" FontSize="12" Margin="6"
+                         FontFamily="Consolas, 宋体" FontSize="12" Padding="10,8"
+                         Background="{DynamicResource SurfaceMutedBrush}"
+                         BorderBrush="{DynamicResource LineSoftBrush}"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                         TextWrapping="NoWrap"/>
+                         TextWrapping="NoWrap" Margin="14,0,14,14"/>
             </Grid>
         </Border>
 
         <!-- ================= 操作按钮 ================= -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <TextBlock x:Name="statusLabel" VerticalAlignment="Center" Margin="0,0,16,0" Foreground="#666"/>
-            <Button Content="生成字模" Width="110" Height="30" Margin="0,0,8,0" Click="OnGenerate"/>
-            <Button Content="生成字库" Width="100" Height="30" Margin="0,0,8,0" Click="OnLibrary"/>
-            <Button Content="复制输出" Width="90" Height="30" Margin="0,0,8,0" Click="OnCopy"/>
-            <Button Content="保存字模" Width="90" Height="30" Margin="0,0,8,0" Click="OnSave"/>
-            <Button Content="清除数据" Width="90" Height="30" Click="OnClear"/>
-        </StackPanel>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Ellipse Grid.Column="0" Width="7" Height="7" Fill="{DynamicResource AccentBrush}"
+                     VerticalAlignment="Center" Margin="2,0,8,0">
+                <Ellipse.Style>
+                    <Style TargetType="{x:Type Ellipse}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=statusLabel}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+            <TextBlock Grid.Column="1" x:Name="statusLabel" VerticalAlignment="Center" FontSize="12"
+                       Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"
+                       Margin="0,0,16,0"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="清除数据" Style="{StaticResource SubtleButtonStyle}" Height="34"
+                        Margin="0,0,4,0" Click="OnClear"/>
+                <Button Content="复制输出" Height="34" Width="92" Margin="0,0,6,0" Click="OnCopy"/>
+                <Button Content="保存字模" Height="34" Width="92" Margin="0,0,6,0" Click="OnSave"/>
+                <Button Content="生成字库" Style="{StaticResource SoftButtonStyle}" Height="34" Width="96"
+                        Margin="0,0,6,0" Click="OnLibrary"/>
+                <Button Content="生成字模" Style="{StaticResource PrimaryButtonStyle}" Height="34" Width="112"
+                        Click="OnGenerate"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

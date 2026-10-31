@@ -192,7 +192,7 @@ public partial class TextModule : UserControl
         }
         sb.Append(fmt.Format(data));
         outputBox.Text = sb.ToString();
-        statusLabel.Text = $"{data.Length} 字节 / {CurrentPattern} / {(MsbFirst ? "顺向" : "逆向")} / {(InvertedYang ? "阳码" : "阴码")}";
+        statusLabel.Text = $"{data.Length} 字节 / {FontLibrary.PatternName(CurrentPattern)} / {(MsbFirst ? "顺向" : "逆向")} / {(InvertedYang ? "阳码" : "阴码")}";
     }
 
     /// <summary>供自动化截图与测试使用。</summary>
