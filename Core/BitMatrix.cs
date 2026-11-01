@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace pix2lcd.Core;
 
@@ -153,28 +152,6 @@ public sealed class BitMatrix
         for (int y = minY; y <= maxY; y++)
             for (int x = minX; x <= maxX; x++)
                 m[x - minX, y - minY] = this[x, y];
-        return m;
-    }
-
-    /// <summary>把若干点阵按给定的水平偏移量排成一行。</summary>
-    public static BitMatrix ConcatHorizontal(IReadOnlyList<BitMatrix> items, int spacing, int height, int offsetY)
-    {
-        int total = 0;
-        foreach (var it in items) total += it.Width + spacing;
-        if (total <= 0) total = 1;
-        var m = new BitMatrix(total, height);
-        int cx = 0;
-        foreach (var it in items)
-        {
-            for (int y = 0; y < it.Height && y + offsetY < height; y++)
-            {
-                int dy = y + offsetY;
-                if (dy < 0) continue;
-                for (int x = 0; x < it.Width && cx + x < m.Width; x++)
-                    m[cx + x, dy] = it[x, y];
-            }
-            cx += it.Width + spacing;
-        }
         return m;
     }
 

@@ -147,19 +147,36 @@ public sealed class RgbaImage
         return new RgbaImage(Width, Height, dst);
     }
 
-    public byte Lum(int x, int y)
+    /// <summary>
+    /// 把 alpha 通道合成到白色背景并返回不透明图像；全不透明的图像直接返回自身。
+    /// 用于不保留 alpha 的色深，避免透明 PNG 的背景被当成黑色。
+    /// </summary>
+    public RgbaImage FlattenOntoWhite()
     {
-        int i = (y * Width + x) * 4;
-        return (byte)((Pixels[i + 2] * 299 + Pixels[i + 1] * 587 + Pixels[i] * 114) / 1000);
-    }
+        bool transparent = false;
+        for (int i = 3; i < Pixels.Length; i += 4)
+        {
+            if (Pixels[i] != 255) { transparent = true; break; }
+        }
+        if (!transparent) return this;
 
-    /// <summary>转二值点阵：亮 = true。用于单色取模的预览。</summary>
-    public BitMatrix ToMono(int threshold)
-    {
-        var m = new BitMatrix(Width, Height);
-        for (int y = 0; y < Height; y++)
-            for (int x = 0; x < Width; x++)
-                m[x, y] = Lum(x, y) >= threshold;
-        return m;
+        var dst = new byte[Pixels.Length];
+        for (int i = 0; i < dst.Length; i += 4)
+        {
+            int a = Pixels[i + 3];
+            if (a == 255)
+            {
+                dst[i] = Pixels[i];
+                dst[i + 1] = Pixels[i + 1];
+                dst[i + 2] = Pixels[i + 2];
+            }
+            else
+            {
+                for (int k = 0; k < 3; k++)
+                    dst[i + k] = (byte)((Pixels[i + k] * a + 255 * (255 - a)) / 255);
+            }
+            dst[i + 3] = 255;
+        }
+        return new RgbaImage(Width, Height, dst);
     }
 }

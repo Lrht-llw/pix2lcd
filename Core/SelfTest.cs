@@ -52,8 +52,19 @@ public static class SelfTest
         }
     }
 
+    private static void SetPixel(RgbaImage img, int x, int y, byte r, byte g, byte b, byte a = 255)
+    {
+        int i = (y * img.Width + x) * 4;
+        img.Pixels[i] = b;
+        img.Pixels[i + 1] = g;
+        img.Pixels[i + 2] = r;
+        img.Pixels[i + 3] = a;
+    }
+
     public static string Run()
     {
+        Log.Clear();
+        _fail = 0;
         Log.Append("Pix2LCD 自检\r\n============\r\n");
 
         // ---------------------------------------------------------- 1. 逐列式
@@ -202,6 +213,125 @@ public static class SelfTest
             Check(cr.Length == 1 * 13, $"13×5 单色列行式 = 1 行块 × 13 列（实际 {cr.Length}）");
         }
 
+        {
+            // 低位在前：第一个像素进入 bit0
+            var img = new RgbaImage(2, 2);
+            SetPixel(img, 0, 0, 255, 255, 255);
+            SetPixel(img, 1, 0, 255, 255, 255);
+            var hLsb = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.Horizontal,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(hLsb, new byte[] { 0x03, 0x00 }, "单色低位在前 2×2 水平");
+            var vLsb = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.Vertical,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(vLsb, new byte[] { 0x01, 0x01 }, "单色低位在前 2×2 垂直");
+        }
+
+        {
+            // 2bpp / 4bpp 调色板打包
+            var img = new RgbaImage(4, 1);
+            SetPixel(img, 0, 0, 0, 0, 0);
+            SetPixel(img, 1, 0, 85, 85, 85);
+            SetPixel(img, 2, 0, 170, 170, 170);
+            SetPixel(img, 3, 0, 255, 255, 255);
+            var msb = ImageEncoder.Encode(img, ColorDepth.Color4, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(msb, new byte[] { 0x1B }, "4 色高位在前 0,1,2,3");
+            var lsb = ImageEncoder.Encode(img, ColorDepth.Color4, DotMatrixEncoder.ScanPattern.Horizontal,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(lsb, new byte[] { 0xE4 }, "4 色低位在前 0,1,2,3");
+
+            var img16 = new RgbaImage(2, 1);
+            SetPixel(img16, 0, 0, 255, 255, 255);
+            SetPixel(img16, 1, 0, 0, 0, 0);
+            var msb16 = ImageEncoder.Encode(img16, ColorDepth.Color16, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(msb16, new byte[] { 0xF0 }, "16 色高位在前 15,0");
+            var lsb16 = ImageEncoder.Encode(img16, ColorDepth.Color16, DotMatrixEncoder.ScanPattern.Horizontal,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(lsb16, new byte[] { 0x0F }, "16 色低位在前 15,0");
+        }
+
+        {
+            // 12bpp：两个像素拼成 3 字节
+            var img = new RgbaImage(2, 1);
+            SetPixel(img, 0, 0, 0xA0, 0xB0, 0xC0); // RGB444 = 0xABC
+            SetPixel(img, 1, 0, 0x10, 0x20, 0x30); // RGB444 = 0x123
+            var msb = ImageEncoder.Encode(img, ColorDepth.Color4096, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(msb, new byte[] { 0xAB, 0xC1, 0x23 }, "12 位高位在前 0xABC,0x123");
+            var lsb = ImageEncoder.Encode(img, ColorDepth.Color4096, DotMatrixEncoder.ScanPattern.Horizontal,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(lsb, new byte[] { 0xBC, 0x3A, 0x12 }, "12 位低位在前 0xABC,0x123");
+        }
+
+        {
+            // 多字节像素的字节序、通道顺序与 alpha
+            var red = new RgbaImage(1, 1);
+            SetPixel(red, 0, 0, 255, 0, 0);
+            var msb = ImageEncoder.Encode(red, ColorDepth.Rgb565, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(msb, new byte[] { 0xF8, 0x00 }, "RGB565 高位在前");
+            var lsb = ImageEncoder.Encode(red, ColorDepth.Rgb565, DotMatrixEncoder.ScanPattern.Horizontal,
+                false, false, ColorOrder.Rgb, 128);
+            CheckBytes(lsb, new byte[] { 0x00, 0xF8 }, "RGB565 低位在前");
+
+            var rgb = new RgbaImage(1, 1);
+            SetPixel(rgb, 0, 0, 10, 20, 30);
+            var rgbOrder = ImageEncoder.Encode(rgb, ColorDepth.Rgb888, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(rgbOrder, new byte[] { 0x0A, 0x14, 0x1E }, "RGB888 通道顺序 R,G,B");
+            var bgrOrder = ImageEncoder.Encode(rgb, ColorDepth.Rgb888, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Bgr, 128);
+            CheckBytes(bgrOrder, new byte[] { 0x1E, 0x14, 0x0A }, "RGB888 通道顺序 B,G,R");
+
+            var argbImg = new RgbaImage(1, 1);
+            SetPixel(argbImg, 0, 0, 10, 20, 30, 100);
+            var argb = ImageEncoder.Encode(argbImg, ColorDepth.Argb8888, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            CheckBytes(argb, new byte[] { 0x0A, 0x14, 0x1E, 0x64 }, "ARGB8888 保留 alpha");
+        }
+
+        {
+            // 四种扫描方式的像素位置（9×9，宽高都不是 8 的倍数）
+            var img = new RgbaImage(9, 9);
+            SetPixel(img, 0, 0, 255, 255, 255);
+            SetPixel(img, 8, 0, 255, 255, 255);
+            byte[] expected;
+
+            var h = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.Horizontal,
+                true, false, ColorOrder.Rgb, 128);
+            expected = new byte[18];
+            expected[0] = 0x80; expected[1] = 0x80;
+            CheckBytes(h, expected, "9×9 水平扫描像素位置");
+
+            var v = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.Vertical,
+                true, false, ColorOrder.Rgb, 128);
+            expected = new byte[18];
+            expected[0] = 0x80; expected[16] = 0x80;
+            CheckBytes(v, expected, "9×9 垂直扫描像素位置");
+
+            var rc = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.RowColumn,
+                true, false, ColorOrder.Rgb, 128);
+            expected = new byte[18];
+            expected[0] = 0x80; expected[9] = 0x80;
+            CheckBytes(rc, expected, "9×9 行列式扫描像素位置");
+
+            var cr = ImageEncoder.Encode(img, ColorDepth.Mono, DotMatrixEncoder.ScanPattern.ColumnRow,
+                true, false, ColorOrder.Rgb, 128);
+            expected = new byte[18];
+            expected[0] = 0x80; expected[8] = 0x80;
+            CheckBytes(cr, expected, "9×9 列行式扫描像素位置");
+        }
+
+        {
+            // 透明像素合成到白色背景
+            var img = new RgbaImage(1, 1);
+            SetPixel(img, 0, 0, 0, 0, 0, 0);
+            var flat = img.FlattenOntoWhite();
+            Check(flat.Pixels[0] == 255 && flat.Pixels[1] == 255 && flat.Pixels[2] == 255 && flat.Pixels[3] == 255,
+                "透明像素合成到白色背景");
+        }
+
         // ---------------------------------------------------------- 5. 输出格式
         Log.Append("\r\n5. 输出格式\r\n");
         {
@@ -212,6 +342,9 @@ public static class SelfTest
             var a51 = OutputFormat.Preset(OutputStyle.A51);
             a51.PerLine = 2;
             Log.Append("  A51:\r\n").Append(Indent(a51.Format(bytes))).Append("\r\n");
+
+            Check(OutputFormat.Preset(OutputStyle.C51).Comment("x").Contains("*/"), "C51 注释包含闭合的 */");
+            Check(OutputFormat.Preset(OutputStyle.A51).Comment("x").TrimStart().StartsWith(";"), "A51 注释以分号开头");
         }
 
         // ---------------------------------------------------------- 6. 字库
@@ -232,11 +365,8 @@ public static class SelfTest
                 DotMatrixEncoder.ScanPattern.Vertical, true, false, OutputFormat.Preset(OutputStyle.C51));
             Check(src.Contains("ch_A[32]") && src.Contains("ch_4E2D[32]"), "C 源含 ch_A / ch_4E2D 符号");
 
-            string idxPath = System.IO.Path.Combine(AppContext.BaseDirectory, "pix2lcd_index_check.txt");
-            FontLibrary.WriteIndex(idxPath, entries);
-            string idx = System.IO.File.ReadAllText(idxPath, OutputEncoding.Text);
+            string idx = FontLibrary.BuildIndex(entries);
             Check(idx.StartsWith("A ~(0)") && idx.Contains("中 ~(64)"), "索引偏移按每字 32 字节递增");
-            try { System.IO.File.Delete(idxPath); } catch { }
         }
         catch (Exception ex)
         {

@@ -34,10 +34,7 @@ public sealed class OutputFormat
     public string RowTerminator = "\r\n";
 
     public string CommentPrefix = "/*\"";
-    public string CommentSuffix = "\",";
-
-    /// <summary>是否用位操作化简连续 0x00 / 0xFF（“紧凑格式”只影响换行，这里不复刻）。</summary>
-    public bool Compact;
+    public string CommentSuffix = "\",*/";
 
     public string FormatNumber(int value)
     {
@@ -84,7 +81,7 @@ public sealed class OutputFormat
             RowSuffix = "",
             RowTerminator = "\r\n",
             CommentPrefix = "/*\"",
-            CommentSuffix = "\",",
+            CommentSuffix = "\",*/",
         },
         OutputStyle.A51 => new OutputFormat
         {
@@ -96,8 +93,8 @@ public sealed class OutputFormat
             RowPrefix = "DB ",
             RowSuffix = ";",
             RowTerminator = "\r\n",
-            CommentPrefix = "\"",
-            CommentSuffix = "\",",
+            CommentPrefix = "; ",
+            CommentSuffix = "",
         },
         OutputStyle.HexPlain => new OutputFormat
         {

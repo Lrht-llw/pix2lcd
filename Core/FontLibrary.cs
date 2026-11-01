@@ -45,8 +45,8 @@ public static class FontLibrary
         return entries.Count;
     }
 
-    /// <summary>索引文件：<c>&lt;字符&gt; ~(&lt;字节偏移&gt;)</c>。</summary>
-    public static void WriteIndex(string path, IReadOnlyList<Entry> entries)
+    /// <summary>索引内容：<c>&lt;字符&gt; ~(&lt;字节偏移&gt;)</c>。</summary>
+    public static string BuildIndex(IReadOnlyList<Entry> entries)
     {
         var sb = new StringBuilder();
         int offset = 0;
@@ -55,8 +55,12 @@ public static class FontLibrary
             sb.Append(e.Char).Append(" ~(").Append(offset).Append(")\r\n");
             offset += e.Data.Length;
         }
-        File.WriteAllText(path, sb.ToString(), OutputEncoding.Text);
+        return sb.ToString();
     }
+
+    /// <summary>索引文件：<c>&lt;字符&gt; ~(&lt;字节偏移&gt;)</c>。</summary>
+    public static void WriteIndex(string path, IReadOnlyList<Entry> entries)
+        => File.WriteAllText(path, BuildIndex(entries), OutputEncoding.Text);
 
     /// <summary>文本字模：每个字符一个 <c>const unsigned char</c> 数组。</summary>
     public static string BuildCSource(IReadOnlyList<Entry> entries, GdiFontRasterizer.FontSpec font,

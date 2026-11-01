@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,6 +21,7 @@ public sealed class LibraryDialog : Window
     private readonly TextBox _pathBox;
     private readonly TextBlock _status;
     private readonly TextBlock _info;
+    private readonly Button _generateButton;
     private readonly LibraryOptions _options;
 
     public LibraryDialog(LibraryOptions options, string defaultChars)
@@ -137,15 +139,15 @@ public sealed class LibraryDialog : Window
         root.Children.Add(_status);
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var ok = new Button
+        _generateButton = new Button
         {
             Content = "开始生成", Width = 112, Height = 32, Margin = new Thickness(0, 0, 8, 0),
             Style = (Style)Application.Current.FindResource("PrimaryButtonStyle"),
         };
-        ok.Click += (_, _) => DoGenerate();
+        _generateButton.Click += (_, _) => DoGenerate();
         var cancel = new Button { Content = "取消", Width = 84, Height = 32 };
         cancel.Click += (_, _) => Close();
-        buttons.Children.Add(ok);
+        buttons.Children.Add(_generateButton);
         buttons.Children.Add(cancel);
         Grid.SetRow(buttons, 7);
         root.Children.Add(buttons);
@@ -163,14 +165,6 @@ public sealed class LibraryDialog : Window
                      $"每字 {_options.BytesPerChar} 字节";
     }
 
-    private static string PatternName(DotMatrixEncoder.ScanPattern p) => p switch
-    {
-        DotMatrixEncoder.ScanPattern.Horizontal => "逐行式",
-        DotMatrixEncoder.ScanPattern.ColumnRow => "列行式",
-        DotMatrixEncoder.ScanPattern.RowColumn => "行列式",
-        _ => "逐列式",
-    };
-
     private void Browse()
     {
         var dlg = new Microsoft.Win32.SaveFileDialog
@@ -183,59 +177,72 @@ public sealed class LibraryDialog : Window
         if (dlg.ShowDialog() == true) _pathBox.Text = dlg.FileName;
     }
 
-    private void DoGenerate()
+    private async void DoGenerate()
     {
+        var chars = CollectChars();
+        if (chars.Count == 0)
+        {
+            _status.Text = "没有有效字符。";
+            return;
+        }
+        string path = _pathBox.Text?.Trim() ?? "";
+        if (path.Length == 0)
+        {
+            _status.Text = "请先选择输出文件。";
+            return;
+        }
+
+        var font = new GdiFontRasterizer.FontSpec
+        {
+            Family = _options.FontFamily,
+            PixelHeight = _options.CellHeight,
+            Bold = _options.Bold,
+            Italic = _options.Italic,
+            Underline = _options.Underline,
+            CharSet = 134,
+            LooseThreshold = true,
+        };
+        bool binMode = _binMode.IsChecked == true;
+
+        _generateButton.IsEnabled = false;
+        _status.Text = $"正在生成 {chars.Count} 个字…";
         try
         {
-            var chars = CollectChars();
-            if (chars.Count == 0)
+            var result = await Task.Run(() =>
             {
-                _status.Text = "没有有效字符。";
-                return;
-            }
-            string path = _pathBox.Text?.Trim() ?? "";
-            if (path.Length == 0)
-            {
-                _status.Text = "请先选择输出文件。";
-                return;
-            }
+                // 字库要求定长记录：每个字符都渲染到同样的 cellWidth × cellHeight 格子（不按半宽处理）
+                var entries = FontLibrary.Build(chars, font, _options.CellWidth, _options.CellHeight,
+                    _options.Pattern, _options.MsbFirst, _options.Yang, _options.DotWidth, _options.DotHeight);
+                int perChar = entries.Count > 0 ? entries[0].Data.Length : 0;
+                string idxPath;
+                if (binMode)
+                {
+                    FontLibrary.WriteBinary(path, entries);
+                    idxPath = Path.ChangeExtension(path, ".txt");
+                    FontLibrary.WriteIndex(idxPath, entries);
+                }
+                else
+                {
+                    string src = FontLibrary.BuildCSource(entries, font, _options.CellWidth, _options.CellHeight,
+                        _options.Pattern, _options.MsbFirst, _options.Yang, _options.Format);
+                    File.WriteAllText(path, src, OutputEncoding.Text);
+                    idxPath = Path.ChangeExtension(path, ".idx.txt");
+                    FontLibrary.WriteIndex(idxPath, entries);
+                }
+                return (Count: entries.Count, Bytes: perChar, IndexPath: idxPath);
+            });
 
-            var font = new GdiFontRasterizer.FontSpec
-            {
-                Family = _options.FontFamily,
-                PixelHeight = _options.CellHeight,
-                Bold = _options.Bold,
-                Italic = _options.Italic,
-                Underline = _options.Underline,
-                CharSet = 134,
-                LooseThreshold = true,
-            };
-
-            // 字库要求定长记录：每个字符都渲染到同样的 cellWidth × cellHeight 格子（不按半宽处理）
-            var entries = FontLibrary.Build(chars, font, _options.CellWidth, _options.CellHeight,
-                _options.Pattern, _options.MsbFirst, _options.Yang, _options.DotWidth, _options.DotHeight);
-            int perChar = entries.Count > 0 ? entries[0].Data.Length : 0;
-
-            if (_binMode.IsChecked == true)
-            {
-                FontLibrary.WriteBinary(path, entries);
-                string idxPath = Path.ChangeExtension(path, ".txt");
-                FontLibrary.WriteIndex(idxPath, entries);
-                _status.Text = $"已生成二进制字库 {path}（{entries.Count} 字 × {perChar} 字节 = {entries.Count * perChar} 字节），索引 {idxPath}";
-            }
-            else
-            {
-                string src = FontLibrary.BuildCSource(entries, font, _options.CellWidth, _options.CellHeight,
-                    _options.Pattern, _options.MsbFirst, _options.Yang, _options.Format);
-                File.WriteAllText(path, src, OutputEncoding.Text);
-                string idxPath = Path.ChangeExtension(path, ".idx.txt");
-                FontLibrary.WriteIndex(idxPath, entries);
-                _status.Text = $"已生成文本字模 {path}（{entries.Count} 字 × {perChar} 字节），索引 {idxPath}";
-            }
+            _status.Text = binMode
+                ? $"已生成二进制字库 {path}（{result.Count} 字 × {result.Bytes} 字节 = {result.Count * result.Bytes} 字节），索引 {result.IndexPath}"
+                : $"已生成文本字模 {path}（{result.Count} 字 × {result.Bytes} 字节），索引 {result.IndexPath}";
         }
         catch (Exception ex)
         {
             _status.Text = "生成失败：" + ex.Message;
+        }
+        finally
+        {
+            _generateButton.IsEnabled = true;
         }
     }
 
@@ -247,7 +254,7 @@ public sealed class LibraryDialog : Window
         foreach (char ch in text)
         {
             if (ch == '\r' || ch == '\n' || ch == '\t') continue;
-            if (_filterSpace.IsChecked == true && (ch < 0x20)) continue;
+            if (_filterSpace.IsChecked == true && char.IsWhiteSpace(ch)) continue;
             if (_filterDup.IsChecked == true && !seen.Add(ch)) continue;
             list.Add(ch);
         }

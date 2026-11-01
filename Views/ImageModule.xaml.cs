@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using pix2lcd.Core;
 
 namespace pix2lcd.Views;
@@ -10,7 +11,11 @@ namespace pix2lcd.Views;
 /// <summary>图片取模面板。</summary>
 public partial class ImageModule : UserControl
 {
+    private const int MaxPreviewSize = 512;
+    private const int MaxOutputSize = 4096;
+
     private bool _loading = true;
+    private readonly DispatcherTimer _reprocessTimer;
     private RgbaImage? _source;
     private RgbaImage? _processed;
     private byte[]? _encoded;
@@ -50,6 +55,13 @@ public partial class ImageModule : UserControl
     public ImageModule()
     {
         InitializeComponent();
+        _reprocessTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+        _reprocessTimer.Tick += (_, _) =>
+        {
+            _reprocessTimer.Stop();
+            Reprocess();
+            if (outputBox.Text.Length > 0) Generate();
+        };
         depthBox.ItemsSource = DepthNames;
         depthBox.SelectedIndex = 0;
         scanBox.ItemsSource = ScanNames;
@@ -68,7 +80,16 @@ public partial class ImageModule : UserControl
     private int OutHeight => ParseSize(outHeightBox.Text, 64);
 
     private static int ParseSize(string? s, int fallback)
-        => int.TryParse((s ?? "").Trim(), out int v) && v > 0 ? Math.Min(v, 4096) : fallback;
+        => int.TryParse((s ?? "").Trim(), out int v) && v > 0 ? Math.Min(v, MaxOutputSize) : fallback;
+
+    /// <summary>按最长边等比缩放到上限内，避免宽高各自截断导致比例失真。</summary>
+    private static (int Width, int Height) FitWithin(int width, int height, int max)
+    {
+        int longest = Math.Max(width, height);
+        if (longest <= max) return (width, height);
+        double scale = (double)max / longest;
+        return (Math.Max(1, (int)Math.Round(width * scale)), Math.Max(1, (int)Math.Round(height * scale)));
+    }
 
     // ---------------------------------------------------------------- 载入
 
@@ -101,12 +122,12 @@ public partial class ImageModule : UserControl
             sourceImage.Source = _source.ToBitmapSource();
 
             _loading = true;
-            int w = Math.Min(_sourceW, 512);
-            int h = Math.Min(_sourceH, 512);
+            var (w, h) = FitWithin(_sourceW, _sourceH, MaxPreviewSize);
             outWidthBox.Text = w.ToString();
             outHeightBox.Text = h.ToString();
             _loading = false;
 
+            _reprocessTimer.Stop();
             Reprocess();
         }
         catch (Exception ex)
@@ -125,9 +146,11 @@ public partial class ImageModule : UserControl
         fileLabel.Text = $"demo  ({_sourceW}×{_sourceH})";
         sourceImage.Source = src;
         _loading = true;
-        outWidthBox.Text = Math.Min(_sourceW, 512).ToString();
-        outHeightBox.Text = Math.Min(_sourceH, 512).ToString();
+        var (w, h) = FitWithin(_sourceW, _sourceH, MaxPreviewSize);
+        outWidthBox.Text = w.ToString();
+        outHeightBox.Text = h.ToString();
         _loading = false;
+        _reprocessTimer.Stop();
         Reprocess();
         Generate();
     }
@@ -139,6 +162,7 @@ public partial class ImageModule : UserControl
         if (_source is null) return;
         int w = OutWidth, h = OutHeight;
         var img = _source.Resize(w, h);
+        if (CurrentDepth != ColorDepth.Argb8888) img = img.FlattenOntoWhite();
         img = img.Adjust(brightSlider.Value, contrastSlider.Value);
         if (invertBox.IsChecked == true) img = img.Invert();
         if (mirrorHBox.IsChecked == true) img = img.FlipHorizontal();
@@ -162,9 +186,11 @@ public partial class ImageModule : UserControl
     {
         if (_source is null) return;
         _loading = true;
-        outWidthBox.Text = _sourceW.ToString();
-        outHeightBox.Text = _sourceH.ToString();
+        var (w, h) = FitWithin(_sourceW, _sourceH, MaxOutputSize);
+        outWidthBox.Text = w.ToString();
+        outHeightBox.Text = h.ToString();
         _loading = false;
+        _reprocessTimer.Stop();
         Reprocess();
     }
 
@@ -187,12 +213,12 @@ public partial class ImageModule : UserControl
             sb.Append($" * 扫描: {ScanNames[scanBox.SelectedIndex]}  位序: {(MsbFirst ? "高位在前" : "低位在前")}\r\n");
             sb.Append($" * 数据长度: {data.Length} 字节\r\n");
             sb.Append(" */\r\n");
-            sb.Append($"const unsigned char gImage_{_processed.Width}x{_processed.Height}[{data.Length}] = {{\r\n");
         }
+        sb.Append($"const unsigned char gImage_{_processed.Width}x{_processed.Height}[{data.Length}] = {{\r\n");
         var fmt = OutputFormat.Preset(OutputStyle.C51);
         fmt.PerLine = 16;
         sb.Append(fmt.Format(data));
-        if (commentBox.IsChecked == true) sb.Append("};\r\n");
+        sb.Append("};\r\n");
         outputBox.Text = sb.ToString();
 
         byteLabel.Text = $"{data.Length} 字节  ({bpp} bpp)";
@@ -204,36 +230,53 @@ public partial class ImageModule : UserControl
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
-        Reprocess();
-        if (outputBox.Text.Length > 0) Generate();
+        ScheduleReprocess();
     }
 
     private void OnCheckedChanged(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        Reprocess();
-        if (outputBox.Text.Length > 0) Generate();
+        ScheduleReprocess();
     }
 
     private void OnTextChanged(object sender, TextChangedEventArgs e)
     {
         if (_loading) return;
-        Reprocess();
-        if (outputBox.Text.Length > 0) Generate();
+        ScheduleReprocess();
     }
 
     private void OnSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_loading) return;
         UpdateLabels();
-        Reprocess();
-        if (outputBox.Text.Length > 0) Generate();
+        ScheduleReprocess();
     }
 
-    private void OnGenerate(object sender, RoutedEventArgs e) => Generate();
+    /// <summary>合并连续的滑动/输入事件，避免每次变化都全量重算并编码。</summary>
+    private void ScheduleReprocess()
+    {
+        _reprocessTimer.Stop();
+        _reprocessTimer.Start();
+    }
+
+    /// <summary>如果有挂起的重算，立即执行，保证“生成/保存”使用最新参数。</summary>
+    private bool FlushReprocess()
+    {
+        if (!_reprocessTimer.IsEnabled) return false;
+        _reprocessTimer.Stop();
+        Reprocess();
+        return true;
+    }
+
+    private void OnGenerate(object sender, RoutedEventArgs e)
+    {
+        FlushReprocess();
+        Generate();
+    }
 
     private void OnCopy(object sender, RoutedEventArgs e)
     {
+        if (FlushReprocess()) Generate();
         if (outputBox.Text.Length == 0) return;
         try
         {
@@ -248,7 +291,8 @@ public partial class ImageModule : UserControl
 
     private void OnSaveC(object sender, RoutedEventArgs e)
     {
-        if (outputBox.Text.Length == 0) Generate();
+        bool flushed = FlushReprocess();
+        if (flushed || outputBox.Text.Length == 0) Generate();
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
             Filter = "C 源文件 (*.c)|*.c|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
@@ -268,7 +312,8 @@ public partial class ImageModule : UserControl
 
     private void OnSaveBin(object sender, RoutedEventArgs e)
     {
-        if (_encoded is null) Generate();
+        bool flushed = FlushReprocess();
+        if (flushed || _encoded is null) Generate();
         if (_encoded is null) return;
         var dlg = new Microsoft.Win32.SaveFileDialog
         {

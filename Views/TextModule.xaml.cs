@@ -13,6 +13,8 @@ public partial class TextModule : UserControl
 {
     private bool _loading = true;
     private BitMatrix? _matrix;
+    /// <summary>旋转/翻转/裁切后，字符与字节块的位置关系不再确定。</summary>
+    private bool _layoutDirty;
 
     public TextModule()
     {
@@ -72,9 +74,24 @@ public partial class TextModule : UserControl
     private void ApplyStylePreset()
     {
         var fmt = OutputFormat.Preset(StyleFromBox());
-        dataPrefixBox.Text = fmt.DataPrefix;
-        dataSuffixBox.Text = fmt.DataSuffix;
-        perLineBox.Text = fmt.PerLine.ToString();
+        if (hexMode.IsChecked != true)
+        {
+            // 十进制输出不应保留 0x 前缀或 A51 的 H 后缀
+            fmt.DataPrefix = "";
+            if (fmt.DataSuffix.Trim().Equals("H", StringComparison.OrdinalIgnoreCase)) fmt.DataSuffix = " ";
+        }
+        bool saved = _loading;
+        _loading = true;
+        try
+        {
+            dataPrefixBox.Text = fmt.DataPrefix;
+            dataSuffixBox.Text = fmt.DataSuffix;
+            perLineBox.Text = fmt.PerLine.ToString();
+        }
+        finally
+        {
+            _loading = saved;
+        }
     }
 
     private OutputStyle StyleFromBox() => styleBox.SelectedIndex switch
@@ -129,6 +146,7 @@ public partial class TextModule : UserControl
         }
 
         _matrix = m;
+        _layoutDirty = false;
         _loading = true;
         zoomSlider.Value = Math.Clamp(420 / Math.Max(1, m.Width), 1, 16);
         _loading = false;
@@ -180,14 +198,44 @@ public partial class TextModule : UserControl
             string name = string.IsNullOrEmpty(text) ? "图形" : text;
             sb.Append(fmt.Comment($"{name}  {fontName} {_matrix.Width}x{_matrix.Height}"));
         }
-        if (indexBox.IsChecked == true)
+        if (indexBox.IsChecked == true && text.Length > 0)
         {
             sb.Append(fmt.Comment("索引: 字符 起始字节偏移"));
-            int offset = 0;
-            foreach (char ch in text)
+            if (text.Length == 1)
             {
-                sb.Append(fmt.Comment($"{ch} ~({offset})"));
-                offset += DotMatrixEncoder.ByteCount(_matrix, CurrentPattern) / Math.Max(1, text.Length);
+                sb.Append(fmt.Comment($"{text[0]} ~(0)"));
+            }
+            else
+            {
+                int cellW = ParseInt(widthBox.Text, ParseInt(heightBox.Text, 16));
+                int cellH = ParseInt(heightBox.Text, 16);
+                if (scaleBox.IsChecked == true) cellW = cellH;
+                var charWidths = new List<int>();
+                int naturalWidth = 0;
+                foreach (char ch in text)
+                {
+                    int w = ch < 0x80 ? Math.Max(1, cellW / 2) : cellW;
+                    charWidths.Add(w);
+                    naturalWidth += w;
+                }
+
+                // 只有逐列式才能保证每个字符的数据连续；旋转/翻转/裁切/锁定后无法反推字符边界。
+                bool contiguous = !_layoutDirty && _matrix.Width == naturalWidth && _matrix.Height == cellH
+                                  && CurrentPattern == DotMatrixEncoder.ScanPattern.Vertical;
+                if (contiguous)
+                {
+                    int rb = DotMatrixEncoder.RowBlocks(_matrix.Height);
+                    int offset = 0;
+                    for (int i = 0; i < text.Length; i++)
+                    {
+                        sb.Append(fmt.Comment($"{text[i]} ~({offset})"));
+                        offset += charWidths[i] * rb;
+                    }
+                }
+                else
+                {
+                    sb.Append(fmt.Comment("索引: 当前取模方式/点阵变换下字符数据不是连续块，无法给出单字节偏移（请用逐列式，或生成字库）"));
+                }
             }
         }
         sb.Append(fmt.Format(data));
@@ -246,6 +294,12 @@ public partial class TextModule : UserControl
     private void OnCheckedChanged(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
+        if (ReferenceEquals(sender, hexMode) || ReferenceEquals(sender, decMode))
+        {
+            ApplyStylePreset();
+            if (outputBox.Text.Length > 0) Generate();
+            return;
+        }
         if (ReferenceEquals(sender, scaleBox) || ReferenceEquals(sender, boldBtn) ||
             ReferenceEquals(sender, italicBtn) || ReferenceEquals(sender, underlineBtn) ||
             ReferenceEquals(sender, lockSizeBox))
@@ -317,6 +371,7 @@ public partial class TextModule : UserControl
 
     private void AfterManualTransform()
     {
+        _layoutDirty = true;
         UpdatePreview();
         if (outputBox.Text.Length > 0) Generate();
     }
@@ -393,13 +448,17 @@ public partial class TextModule : UserControl
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
             Filter = "文本文件 (*.txt)|*.txt|C 源文件 (*.c)|*.c|所有文件 (*.*)|*.*",
-            FileName = "字模数据.txt",
+            FileName = "字模数据",
+            DefaultExt = "txt",
         };
         if (dlg.ShowDialog() != true) return;
+        string path = dlg.FileName;
+        if (System.IO.Path.GetExtension(path).Length == 0)
+            path += dlg.FilterIndex == 2 ? ".c" : ".txt";
         try
         {
-            System.IO.File.WriteAllText(dlg.FileName, outputBox.Text, OutputEncoding.Text);
-            statusLabel.Text = "已保存：" + dlg.FileName;
+            System.IO.File.WriteAllText(path, outputBox.Text, OutputEncoding.Text);
+            statusLabel.Text = "已保存：" + path;
         }
         catch (Exception ex)
         {

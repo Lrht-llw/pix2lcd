@@ -72,9 +72,6 @@ public static class GdiFontRasterizer
     [DllImport("gdi32.dll")]
     private static extern uint SetBkColor(IntPtr hdc, uint crColor);
 
-    [DllImport("gdi32.dll")]
-    private static extern int GetDeviceCaps(IntPtr hdc, int index);
-
     [DllImport("user32.dll")]
     private static extern IntPtr GetDC(IntPtr hWnd);
 
@@ -83,7 +80,6 @@ public static class GdiFontRasterizer
 
     private const uint WHITENESS = 0x00FF0062;
     private const int TRANSPARENT = 1;
-    private const int LOGPIXELSY = 90;
 
     /// <summary>字体描述。</summary>
     public sealed class FontSpec
@@ -109,6 +105,7 @@ public static class GdiFontRasterizer
         IntPtr dib = IntPtr.Zero;
         IntPtr old = IntPtr.Zero;
         IntPtr hfont = IntPtr.Zero;
+        IntPtr oldFont = IntPtr.Zero;
         try
         {
             memDc = CreateCompatibleDC(screenDc);
@@ -133,7 +130,7 @@ public static class GdiFontRasterizer
                 font.Italic ? 1u : 0u, font.Underline ? 1u : 0u, font.Strikeout ? 1u : 0u,
                 (uint)Math.Max(0, font.CharSet), 0, 0, 0, 0, font.Family);
             if (hfont == IntPtr.Zero) return m;
-            var oldFont = SelectObject(memDc, hfont);
+            oldFont = SelectObject(memDc, hfont);
 
             var s = ch.ToString();
             TextOutW(memDc, 0, 0, s, 1);
@@ -158,6 +155,7 @@ public static class GdiFontRasterizer
         }
         finally
         {
+            if (oldFont != IntPtr.Zero) SelectObject(memDc, oldFont);
             if (hfont != IntPtr.Zero) DeleteObject(hfont);
             if (old != IntPtr.Zero) SelectObject(memDc, old);
             if (dib != IntPtr.Zero) DeleteObject(dib);

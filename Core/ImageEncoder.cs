@@ -17,11 +17,6 @@ public enum ColorOrder
 /// </summary>
 public static class ImageEncoder
 {
-    public const DotMatrixEncoder.ScanPattern HorizonScan = DotMatrixEncoder.ScanPattern.Horizontal;
-    public const DotMatrixEncoder.ScanPattern VerticalScan = DotMatrixEncoder.ScanPattern.Vertical;
-    public const DotMatrixEncoder.ScanPattern DataHorByteVer = DotMatrixEncoder.ScanPattern.RowColumn;
-    public const DotMatrixEncoder.ScanPattern DataVerByteHor = DotMatrixEncoder.ScanPattern.ColumnRow;
-
     /// <summary>
     /// 生成按指定扫描方式排列的像素坐标序列。
     /// <paramref name="pixelsPerByte"/> = 8 / 每像素位数，小于 8bpp 时每行（列）要补齐到它的整数倍，
@@ -104,6 +99,7 @@ public static class ImageEncoder
         if ((uint)x >= (uint)img.Width || (uint)y >= (uint)img.Height) return 0;
         int i = (y * img.Width + x) * 4;
         byte b = img.Pixels[i], g = img.Pixels[i + 1], r = img.Pixels[i + 2];
+        byte a = img.Pixels[i + 3];
         switch (depth)
         {
             case ColorDepth.Mono:
@@ -139,7 +135,7 @@ public static class ImageEncoder
             case ColorDepth.Rgb888:
                 return (r << 16) | (g << 8) | b;
             case ColorDepth.Argb8888:
-                return (255 << 24) | (r << 16) | (g << 8) | b;
+                return (a << 24) | (r << 16) | (g << 8) | b;
             default:
                 return 0;
         }
@@ -275,8 +271,9 @@ public static class ImageEncoder
                 }
                 else
                 {
+                    // 24 位小端：低地址先放第一个像素的低 8 位
                     outp.Add((byte)(v1 & 0xFF));
-                    outp.Add((byte)(((v1 >> 8) << 4) | ((v2 & 0xF0) >> 4)));
+                    outp.Add((byte)(((v1 >> 8) & 0x0F) | ((v2 & 0x0F) << 4)));
                     outp.Add((byte)(v2 >> 4));
                 }
             }

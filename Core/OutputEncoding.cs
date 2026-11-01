@@ -22,7 +22,7 @@ public static class OutputEncoding
     {
         try
         {
-            var t = Type.GetType("System.Text.Encoding.CodePages.CodePagesEncodingProvider, System.Text.Encoding.CodePages");
+            var t = Type.GetType("System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages");
             if (t is null) return;
             var prop = t.GetProperty("Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
             if (prop?.GetValue(null) is EncodingProvider provider)
