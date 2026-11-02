@@ -1,4 +1,4 @@
-﻿<Window x:Class="pix2lcd.MainWindow"
+<Window x:Class="pix2lcd.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:pix2lcd.Views"
@@ -6,60 +6,110 @@
         MinWidth="1120" MinHeight="760"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource AppBackgroundBrush}">
-    <Grid Margin="18,16,18,18">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <!-- ================= 主内容 ================= -->
+        <Grid Margin="18,16,18,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- 背景柔光 -->
-        <Ellipse Grid.RowSpan="2" Width="560" Height="260" HorizontalAlignment="Left"
-                 VerticalAlignment="Top" Margin="-70,-90,0,0" IsHitTestVisible="False"
-                 Fill="{DynamicResource GlowBrush}"/>
+            <!-- 背景柔光 -->
+            <Ellipse Grid.RowSpan="2" Width="560" Height="260" HorizontalAlignment="Left"
+                     VerticalAlignment="Top" Margin="-70,-90,0,0" IsHitTestVisible="False"
+                     Fill="{DynamicResource GlowBrush}"/>
 
-        <!-- ================= 品牌头部 ================= -->
-        <StackPanel Grid.Row="0" Margin="2,2,0,0" VerticalAlignment="Center">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Pix2LCD" FontSize="21" FontWeight="SemiBold"
-                           Foreground="{DynamicResource HeaderTitleBrush}"
-                           VerticalAlignment="Center"/>
-                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"
-                        BorderThickness="1" CornerRadius="9" Padding="8,2" Margin="10,0,0,0"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="v1.1.0" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}"/>
-                </Border>
-            </StackPanel>
-            <TextBlock Text="点阵字模生成工具 · 文字 / 图片取模" FontSize="11.5"
-                       Foreground="{DynamicResource TextMutedBrush}" Margin="1,3,0,0"/>
-        </StackPanel>
-
-        <!-- ================= 主标签页 ================= -->
-        <TabControl x:Name="MainTabs" Grid.Row="1" Margin="0,16,0,0">
-            <TabItem>
-                <TabItem.Header>
+            <!-- ================= 品牌头部 ================= -->
+            <Grid Grid.Row="0" Margin="2,2,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
-                        <Path Width="16" Height="16" Stretch="None" VerticalAlignment="Center"
-                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"
-                              StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                              Data="M2.5,4.5 H13.5 M2.5,8.5 H11 M2.5,12.5 H8.5"/>
-                        <TextBlock Text="文字取模" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Pix2LCD" FontSize="21" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource HeaderTitleBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"
+                                BorderThickness="1" CornerRadius="9" Padding="8,2" Margin="10,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="v1.1.0" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}"/>
+                        </Border>
                     </StackPanel>
-                </TabItem.Header>
-                <views:TextModule x:Name="TextPage"/>
-            </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <Path Width="16" Height="16" Stretch="None" VerticalAlignment="Center"
-                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"
-                              StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                              StrokeLineJoin="Round"
-                              Data="M2,3 H14 V13 H2 Z M2.5,11 L6,7.5 L8.8,10.3 L10.6,8.5 L13.5,11.4"/>
-                        <TextBlock Text="图片取模" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <views:ImageModule x:Name="ImagePage"/>
-            </TabItem>
-        </TabControl>
+                    <TextBlock Text="点阵字模生成工具 · 文字 / 图片取模" FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}" Margin="1,3,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" x:Name="helpBtn" Content="?" Width="30" Height="30" Padding="0"
+                        Style="{StaticResource SoftButtonStyle}" FontSize="13.5" FontWeight="SemiBold"
+                        ToolTip="重新查看快速开始" VerticalAlignment="Center" Click="OnShowGuide"/>
+            </Grid>
+
+            <!-- ================= 主标签页 ================= -->
+            <TabControl x:Name="MainTabs" Grid.Row="1" Margin="0,16,0,0">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="16" Height="16" Stretch="None" VerticalAlignment="Center"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"
+                                  StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="M2.5,4.5 H13.5 M2.5,8.5 H11 M2.5,12.5 H8.5"/>
+                            <TextBlock Text="文字取模" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <views:TextModule x:Name="TextPage"/>
+                </TabItem>
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="16" Height="16" Stretch="None" VerticalAlignment="Center"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"
+                                  StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Data="M2,3 H14 V13 H2 Z M2.5,11 L6,7.5 L8.8,10.3 L10.6,8.5 L13.5,11.4"/>
+                            <TextBlock Text="图片取模" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <views:ImageModule x:Name="ImagePage"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <!-- ================= 快速开始蒙层 ================= -->
+        <Grid x:Name="GuideLayer" Background="#A6121821" Visibility="Collapsed">
+            <Border Width="580" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineStrongBrush}"
+                    BorderThickness="1" CornerRadius="14" Padding="28,24"
+                    Effect="{DynamicResource TabShadowEffect}">
+                <StackPanel>
+                    <TextBlock x:Name="GuideStepLabel" Text="快速开始 · 1 / 3" FontSize="11.5"
+                               Foreground="{DynamicResource AccentBrush}"/>
+                    <TextBlock x:Name="GuideTitle" Margin="0,6,0,0" FontSize="19" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="GuideBody" Margin="0,10,0,0" FontSize="13" LineHeight="21"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    <Border Background="{DynamicResource AccentTintBrush}" CornerRadius="8" Padding="10,8"
+                            Margin="0,14,0,0">
+                        <TextBlock x:Name="GuideTip" FontSize="11.5" LineHeight="17"
+                                   Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap"/>
+                    </Border>
+                    <Grid Margin="0,18,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="GuideDots" Text="● ○ ○" FontSize="12"
+                                   Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="跳过" Style="{StaticResource SubtleButtonStyle}" Height="32"
+                                    Margin="0,0,4,0" Click="OnGuideSkip"/>
+                            <Button x:Name="GuideBack" Content="上一步" Height="32" Width="80"
+                                    Margin="0,0,4,0" Click="OnGuideBack"/>
+                            <Button x:Name="GuideNext" Content="下一步" Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="32" Width="92" Click="OnGuideNext"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

@@ -144,11 +144,21 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="取模设置" Style="{StaticResource SectionTitleStyle}"/>
                         <TextBlock Grid.Column="1" HorizontalAlignment="Right" Style="{StaticResource HintStyle}"
-                                   Text="阴码 / 走向 / 格式"/>
+                                   Text="预设 / 阴码 / 取模方式"/>
                     </Grid>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,0,4,10">
                         <StackPanel Margin="4,4,8,4">
-                            <GroupBox Header="点阵格式" Padding="8">
+                            <GroupBox Header="驱动预设" Padding="8">
+                                <StackPanel>
+                                    <ComboBox x:Name="presetBox" Height="30" SelectionChanged="OnPresetChanged"
+                                              PreviewMouseWheel="OnPresetWheel"/>
+                                    <TextBlock x:Name="presetHint" TextWrapping="Wrap" FontSize="11"
+                                               LineHeight="16" Foreground="{DynamicResource TextMutedBrush}"
+                                               Margin="1,7,1,0"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="点阵格式" Padding="8" Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <RadioButton x:Name="yinCode" Content="阴码 (亮点=1)" IsChecked="True"
                                                  Margin="0,0,14,0" Checked="OnCheckedChanged"/>
@@ -178,54 +188,60 @@
                                 </Grid>
                             </GroupBox>
 
-                            <GroupBox Header="取模走向" Padding="8" Margin="0,8,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="lsbFirst" Content="逆向 (低位在前)" Margin="0,0,14,0"
-                                                 Checked="OnCheckedChanged"/>
-                                    <RadioButton x:Name="msbFirst" Content="顺向 (高位在前)" IsChecked="True"
-                                                 Checked="OnCheckedChanged"/>
-                                </StackPanel>
-                            </GroupBox>
+                            <ToggleButton x:Name="advancedToggle" Content="高级设置（走向 / 输出格式）  ▾"
+                                          Height="30" Margin="0,10,0,0"
+                                          Checked="OnAdvancedToggled" Unchecked="OnAdvancedToggled"/>
 
-                            <GroupBox Header="输出数制与格式" Padding="8" Margin="0,8,0,0">
-                                <StackPanel>
+                            <StackPanel x:Name="advancedPanel" Visibility="Collapsed">
+                                <GroupBox Header="取模走向" Padding="8" Margin="0,8,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <RadioButton x:Name="hexMode" Content="十六进制" IsChecked="True"
-                                                     Margin="0,0,14,0" Checked="OnCheckedChanged"/>
-                                        <RadioButton x:Name="decMode" Content="十进制" Checked="OnCheckedChanged"/>
+                                        <RadioButton x:Name="lsbFirst" Content="逆向 (低位在前)" Margin="0,0,14,0"
+                                                     Checked="OnCheckedChanged"/>
+                                        <RadioButton x:Name="msbFirst" Content="顺向 (高位在前)" IsChecked="True"
+                                                     Checked="OnCheckedChanged"/>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
-                                        <TextBlock Text="格式" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
-                                        <ComboBox x:Name="styleBox" Width="104" Height="28"
-                                                  SelectionChanged="OnSelectionChanged"/>
-                                        <TextBlock Text="每行" Style="{StaticResource FieldLabelStyle}" Margin="10,0,4,0"/>
-                                        <TextBox x:Name="perLineBox" Width="46" Height="28" Text="16"
-                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                        <TextBlock Text="个" Style="{StaticResource FieldLabelStyle}" Margin="4,0,0,0"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
-                                        <TextBlock Text="数据前缀" Style="{StaticResource FieldLabelStyle}"/>
-                                        <TextBox x:Name="dataPrefixBox" Width="62" Height="28" Text="0x"
-                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                        <TextBlock Text="后缀" Style="{StaticResource FieldLabelStyle}" Margin="8,0,4,0"/>
-                                        <TextBox x:Name="dataSuffixBox" Width="62" Height="28" Text=","
-                                                 VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <CheckBox x:Name="commentBox" Content="输出注释" IsChecked="True"
-                                                  VerticalAlignment="Center" Checked="OnCheckedChanged"
-                                                  Unchecked="OnCheckedChanged"/>
-                                        <CheckBox x:Name="indexBox" Content="输出索引" Margin="14,0,0,0"
-                                                  VerticalAlignment="Center" Checked="OnCheckedChanged"
-                                                  Unchecked="OnCheckedChanged"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </GroupBox>
+                                </GroupBox>
 
-                            <GroupBox Header="取模说明" Padding="8" Margin="0,8,0,0">
-                                <TextBlock x:Name="helpText" TextWrapping="Wrap" FontSize="11.5"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" LineHeight="18"/>
-                            </GroupBox>
+                                <GroupBox Header="输出数制与格式" Padding="8" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="hexMode" Content="十六进制" IsChecked="True"
+                                                         Margin="0,0,14,0" Checked="OnCheckedChanged"/>
+                                            <RadioButton x:Name="decMode" Content="十进制" Checked="OnCheckedChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                            <TextBlock Text="格式" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                                            <ComboBox x:Name="styleBox" Width="104" Height="28"
+                                                      SelectionChanged="OnSelectionChanged"/>
+                                            <TextBlock Text="每行" Style="{StaticResource FieldLabelStyle}" Margin="10,0,4,0"/>
+                                            <TextBox x:Name="perLineBox" Width="46" Height="28" Text="16"
+                                                     VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                            <TextBlock Text="个" Style="{StaticResource FieldLabelStyle}" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                            <TextBlock Text="数据前缀" Style="{StaticResource FieldLabelStyle}"/>
+                                            <TextBox x:Name="dataPrefixBox" Width="62" Height="28" Text="0x"
+                                                     VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                            <TextBlock Text="后缀" Style="{StaticResource FieldLabelStyle}" Margin="8,0,4,0"/>
+                                            <TextBox x:Name="dataSuffixBox" Width="62" Height="28" Text=","
+                                                     VerticalContentAlignment="Center" TextChanged="OnTextChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <CheckBox x:Name="commentBox" Content="输出注释" IsChecked="True"
+                                                      VerticalAlignment="Center" Checked="OnCheckedChanged"
+                                                      Unchecked="OnCheckedChanged"/>
+                                            <CheckBox x:Name="indexBox" Content="输出索引" Margin="14,0,0,0"
+                                                      VerticalAlignment="Center" Checked="OnCheckedChanged"
+                                                      Unchecked="OnCheckedChanged"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <GroupBox Header="取模说明" Padding="8" Margin="0,8,0,0">
+                                    <TextBlock x:Name="helpText" TextWrapping="Wrap" FontSize="11.5"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" LineHeight="18"/>
+                                </GroupBox>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

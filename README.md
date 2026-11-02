@@ -33,11 +33,19 @@ bin\Debug\net8.0-windows\pix2lcd.exe --selftest selftest.txt
 各色深的位打包与字节序、四种图片扫描方式的像素位置、透明像素合成、输出格式、字库生成与索引。
 示例报告见 [assets/selftest.txt](assets/selftest.txt)。
 
-界面截图也可以用命令行生成（无需人工操作）：
+界面截图也可以用命令行生成（无需人工操作），会输出 `ui_text.png`、`ui_image.png`
+与 `ui_guide.png`（快速开始蒙层）：
 
 ```powershell
 bin\Debug\net8.0-windows\pix2lcd.exe --screenshot .\shots
 ```
+
+---
+
+## 快速开始
+
+首次启动会自动弹出 3 步引导，可以随时「跳过」；之后点右上角「?」可重新打开。
+引导是否已看过记录在 `%LOCALAPPDATA%\pix2lcd\settings.ini`，删除该文件即可再次自动弹出。
 
 ---
 
@@ -47,7 +55,9 @@ bin\Debug\net8.0-windows\pix2lcd.exe --screenshot .\shots
 
 1. 选择字体、字宽、字高（勾选「等比」时字宽自动跟随字高）。
 2. 输入文字，左侧实时预览点阵与「取模走线」。
-3. 选择取模方式 / 取模走向 / 点阵格式 / 输出格式，点「生成字模」。
+3. 在右侧「驱动预设」选择屏幕驱动（SSD1306 / ST7565 / ST7920 / TFT），取模方式与位序会自动配好；
+   需要时展开「高级设置」手动调整取模走向与输出格式。
+4. 点「生成字模」。
 
 ### 四种取模方式
 

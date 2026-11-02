@@ -15,6 +15,9 @@ namespace pix2lcd
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>截图模式不弹出快速开始，避免覆盖界面截图。</summary>
+        internal static bool ScreenshotMode { get; private set; }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             AppTheme.Initialize();
@@ -50,6 +53,7 @@ namespace pix2lcd
         /// <summary>把两个模块各渲染一张 PNG，用于无人工介入的界面校验。</summary>
         private void RunScreenshot(string outDir)
         {
+            ScreenshotMode = true;
             Directory.CreateDirectory(outDir);
             string logPath = Path.Combine(outDir, "log.txt");
             var log = new StringBuilder();
@@ -66,6 +70,12 @@ namespace pix2lcd
                         win.UpdateLayout();
                         Save(win, Path.Combine(outDir, "ui_text.png"));
                         log.AppendLine("text ok");
+
+                        win.ShowGuide(0);
+                        win.UpdateLayout();
+                        Save(win, Path.Combine(outDir, "ui_guide.png"));
+                        win.CloseGuide(false);
+                        log.AppendLine("guide ok");
 
                         win.TextPage.SetText("中A");
                         win.UpdateLayout();

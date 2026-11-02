@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using pix2lcd.Core;
 
@@ -11,6 +12,31 @@ namespace pix2lcd.Views;
 /// <summary>文字取模面板。</summary>
 public partial class TextModule : UserControl
 {
+    /// <summary>按常见屏幕驱动 IC 预置取模方式与位序；Pattern 为 null 表示手动配置。</summary>
+    private sealed record DriverPreset(
+        string Name,
+        string Description,
+        bool Yang,
+        DotMatrixEncoder.ScanPattern? Pattern,
+        bool MsbFirst);
+
+    private static readonly DriverPreset[] Presets =
+    {
+        new("自定义", "手动选择取模方式、走向与输出格式。", false, null, true),
+        new("SSD1306 / SSD1315（OLED）",
+            "列行式 + 逆向（低位在前）+ 阴码：页寻址，每字节 8 个纵向像素。", false,
+            DotMatrixEncoder.ScanPattern.ColumnRow, false),
+        new("ST7565 / ST7567（LCD）",
+            "列行式 + 逆向（低位在前）+ 阴码：与 SSD1306 同为页寻址。", false,
+            DotMatrixEncoder.ScanPattern.ColumnRow, false),
+        new("ST7920（12864）",
+            "逐行式 + 逆向（低位在前）+ 阴码：图形模式按行写入。", false,
+            DotMatrixEncoder.ScanPattern.Horizontal, false),
+        new("ILI9341 / ST7735（TFT）",
+            "逐行式 + 顺向（高位在前）+ 阴码：常见 TFT 字库取模。", false,
+            DotMatrixEncoder.ScanPattern.Horizontal, true),
+    };
+
     private bool _loading = true;
     private BitMatrix? _matrix;
     /// <summary>旋转/翻转/裁切后，字符与字节块的位置关系不再确定。</summary>
@@ -64,6 +90,10 @@ public partial class TextModule : UserControl
             styleBox.ItemsSource = new[] { "C51", "A51", "十六进制", "二进制" };
             styleBox.SelectedIndex = 0;
             ApplyStylePreset();
+
+            presetBox.ItemsSource = Array.ConvertAll(Presets, p => p.Name);
+            presetBox.SelectedIndex = 0;
+            presetHint.Text = Presets[0].Description;
         }
         finally
         {
@@ -250,6 +280,63 @@ public partial class TextModule : UserControl
     }
 
     // ---------------------------------------------------------------- 事件
+    /// <summary>屏蔽滚轮选择，避免滚动右侧设置面板时误改预设。</summary>
+    private void OnPresetWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!presetBox.IsDropDownOpen) e.Handled = true;
+    }
+
+    private void OnPresetChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || presetBox.SelectedIndex < 0) return;
+        var preset = Presets[presetBox.SelectedIndex];
+        presetHint.Text = preset.Description;
+        if (preset.Pattern is null) return;
+
+        _loading = true;
+        try
+        {
+            yangCode.IsChecked = preset.Yang;
+            yinCode.IsChecked = !preset.Yang;
+            modeVertical.IsChecked = preset.Pattern == DotMatrixEncoder.ScanPattern.Vertical;
+            modeHorizontal.IsChecked = preset.Pattern == DotMatrixEncoder.ScanPattern.Horizontal;
+            modeColumnRow.IsChecked = preset.Pattern == DotMatrixEncoder.ScanPattern.ColumnRow;
+            modeRowColumn.IsChecked = preset.Pattern == DotMatrixEncoder.ScanPattern.RowColumn;
+            msbFirst.IsChecked = preset.MsbFirst;
+            lsbFirst.IsChecked = !preset.MsbFirst;
+        }
+        finally
+        {
+            _loading = false;
+        }
+        UpdateHelp();
+        UpdatePreview();
+        if (outputBox.Text.Length > 0) Generate();
+    }
+
+    private void OnAdvancedToggled(object sender, RoutedEventArgs e)
+    {
+        bool open = advancedToggle.IsChecked == true;
+        advancedPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        advancedToggle.Content = open ? "高级设置（走向 / 输出格式）  ▴" : "高级设置（走向 / 输出格式）  ▾";
+    }
+
+    /// <summary>手动改过取模相关选项后，预设回到「自定义」，避免预设名称与实际参数不符。</summary>
+    private void ResetPreset()
+    {
+        if (presetBox.SelectedIndex <= 0) return;
+        _loading = true;
+        try
+        {
+            presetBox.SelectedIndex = 0;
+            presetHint.Text = Presets[0].Description;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
@@ -294,6 +381,11 @@ public partial class TextModule : UserControl
     private void OnCheckedChanged(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
+        if (ReferenceEquals(sender, yinCode) || ReferenceEquals(sender, yangCode) ||
+            ReferenceEquals(sender, modeVertical) || ReferenceEquals(sender, modeHorizontal) ||
+            ReferenceEquals(sender, modeColumnRow) || ReferenceEquals(sender, modeRowColumn) ||
+            ReferenceEquals(sender, lsbFirst) || ReferenceEquals(sender, msbFirst))
+            ResetPreset();
         if (ReferenceEquals(sender, hexMode) || ReferenceEquals(sender, decMode))
         {
             ApplyStylePreset();
